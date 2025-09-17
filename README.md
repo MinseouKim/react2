@@ -1,4 +1,71 @@
 # 202130103 김민서
+## 9/17 4주차
+### git checkout vs git switch 차이
+- checkout은 브렌치를 이동하고 파일도 바꿀 수 있습니다. 이 때문에 실수할 위험성이 있습니다.
+- switch 브랜치만 이동할 수 있기 때문에 안전하게 사용할 수 있다.
+### 새 branch를 만드느느 명령어
+- 또한 switch와 checkout은 branch를 만들기만 할 수는 없고, 만들고 바로 이동합니다.
+- $ git switch -c \<branch name\>
+- $ git checkout -b \<branch name\>
+- $ git checkout \<branch name\>
+
+## Next.js 3장 시작
+- 레이아웃은 여러 페이지에서 공유 되는 UI입니다 . 탐색 시 레이아웃은 상태를 유지하고, 상호작용을 유지하며, 다시 렌더링되지 않습니다.
+
+- layout기본적으로 React 컴포넌트를 파일 에서 내보내 레이아웃을 정의할 수 있습니다 . 
+- 컴포넌트는 children페이지 또는 다른 레이아웃이 될 수 있는 prop을 받아야 합니다 .
+
+- 예를 들어, 인덱스 페이지를 자식으로 허용하는 레이아웃을 만들려면 다음 디렉토리 layout에 파일을 추가합니다 (app).
+
+### app/layout.tsx
+```
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {/* Layout UI */}
+        {/* Place children where you want to render a page or nested layout */}
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+- 위 레이아웃은 디렉토리 루트에 정의되어 있으므로 **Root layout/app** 이라고 합니다 . 루트 레이아웃은 필수이며 **html** 및 **body** 태그를 포함해야 합니다 .
+
+- 중첩 경로는 여러 URL 세그먼트로 구성된 경로입니다. 예를 들어, /blog/[slug]경로는 세 개의 세그먼트로 구성됩니다.
+
+- /(루트 세그먼트)
+- blog(세그먼트)
+- [slug](잎 세그먼트)
+
+### 동작 세그먼트 만들기
+- 동적 세그먼트를 생성하려면 세그먼트(폴더) 이름을 대괄호로 묶습니다(예: [segmentName].). 예를 들어, app/blog/[slug]/page.tsx경로에서 는 [slug]동적 세그먼트입니다.
+- Dynamic Segments 내의 중첩된 레이아웃 도 paramsprops에 액세스할 수 있습니다.
+
+### 검색 매개변수를 사용한 랜더링
+- 서버 구성 요소 페이지 에서 다음 prop(searchParams)을 사용하여 검색 매개변수에 액세스할 수 있습니다. 
+
+```
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const filters = (await searchParams).filters
+}
+```
+- 검색 매개변수를 읽기 위한 수신 요청이 필요하므로 searchParams페이지를 동적 렌더링 으로 선택 합니다.
+
+- 클라이언트 구성 요소는 useSearchParams : 후크를 사용하여 검색 매개변수를 읽을 수 있습니다.
+
+- useSearchParams: 정적 으로 렌더링된 경로 와 동적으로 렌더링된 경로 에 대해 자세히 알아보세요 .
+
+
 ## 9/10 3주차
 ### 용어 정의
 - 원문에는 route 라는 단어가 자주 등장하고, 사전적 의미로는 "경로"입니다.
