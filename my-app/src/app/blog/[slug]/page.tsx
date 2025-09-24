@@ -1,10 +1,15 @@
+import Link from "next/link";
 
-// async & await 외부 API 키를 불러오기 위해 사용한다
-export default async function page({params}: {params : {slug : string}}){
-    const {slug} = await params;
-    return(
-        <>
-            <h1>This is blog page</h1>
-        </>
-    )
+export default async function Post({ post }) {
+  const posts = await getPosts();
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+        </li>
+      ))}
+    </ul>
+  );
 }
