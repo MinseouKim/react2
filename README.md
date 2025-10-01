@@ -1,5 +1,58 @@
 # 202130103 김민서
+# 10/1 6주차
+### 클라이언트 측 전환
+- 전통적으로 서버에서 렌더링된 페이지로 이동하면 전체 페이지가 로드됩니다. 이로 인해 상태가 삭제되고, 스크롤 위치가 재설정되며, 상호작용이 차단됩니다.
 
+- Next.js는 컴포넌트를 사용하여 클라이언트 측 전환을 구현함으로써 이러한 문제를 해결합니다 <Link>. 페이지를 새로 고치는 대신, 다음과 같은 방법으로 콘텐츠를 동적으로 업데이트합니다.
+
+- 공유된 레이아웃과 UI를 유지합니다.
+- 현재 페이지를 미리 가져온 로딩 상태 또는 가능한 경우 새 페이지로 바꿉니다.
+
+- 클라이언트 측 전환은 서버에서 렌더링된 앱을 클라이언트에서 렌더링된 앱처럼 느껴지게 하는 요소입니다. 또한 프리페칭 및 스트리밍 과 함께 사용하면 동적 경로에서도 빠른 전환이 가능합니다.
+### 전환을 느리게 만드는 요인은 무엇일까요?
+- Next.js 최적화를 통해 탐색 속도가 빨라지고 반응성이 향상됩니다. 
+하지만 특정 조건에서는 전환 속도가 여전히 느릴 수 있습니다 . 몇 가지 일반적인 원인과 사용자 경험을 개선하는 방법은 다음과 같습니다.
+
+#### 동적 경로 없음(loading.tsx)
+- 동적 경로로 이동할 때 클라이언트는 결과를 표시하기 전에 서버의 응답을 기다려야 합니다. 이로 인해 사용자는 앱이 응답하지 않는다는 인상을 받을 수 있습니다.
+
+- loading.tsx부분적 프리페칭을 활성화하고, 즉각적인 탐색을 트리거하고, 경로가 렌더링되는 동안 로딩 UI를 표시하려면 동적 경로에 추가하는 것이 좋습니다 .
+
+### 느린 네트워크
+- 네트워크가 느리거나 불안정한 경우, 사용자가 링크를 클릭하기 전에 프리페칭이 완료되지 않을 수 있습니다. 이는 정적 경로와 동적 경로 모두에 영향을 미칠 수 있습니다. 이 경우, loading.js폴백이 아직 프리페칭되지 않았기 때문에 즉시 나타나지 않을 수 있습니다.
+
+- 인지된 성과를 개선하기 위해 전환이 진행되는 동안 사용자에게 인라인 시각적 피드백(링크의 스피너나 텍스트 반짝임 등)을 보여주기 위해 useLinkStatus후크 를 사용할 수 있습니다 .
+
+### ex)네이티브 히스토리 API
+- Next.js를 사용하면 네이티브를 사용할 수 있습니다.window.history.pushState그리고window.history.replaceState페이지를 다시 로드하지 않고도 브라우저의 기록 스택을 업데이트하는 방법.
+
+- pushState그리고 replaceState호출은 Next.js 라우터에 통합되어 .와 동기화할 수 usePathname있습니다 useSearchParams.
+
+- window.history.pushState
+브라우저의 기록 스택에 새 항목을 추가하는 데 사용합니다. 사용자는 이전 상태로 돌아갈 수 있습니다. 예를 들어, 제품 목록을 정렬하려면 다음과 같이 합니다.
+
+```
+'use client'
+ 
+import { useSearchParams } from 'next/navigation'
+ 
+export default function SortProducts() {
+  const searchParams = useSearchParams()
+ 
+  function updateSorting(sortOrder: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sort', sortOrder)
+    window.history.pushState(null, '', `?${params.toString()}`)
+  }
+ 
+  return (
+    <>
+      <button onClick={() => updateSorting('asc')}>Sort Ascending</button>
+      <button onClick={() => updateSorting('desc')}>Sort Descending</button>
+    </>
+  )
+}
+```
 ## 9/24 5주차
 
 ### searchParams란?
@@ -53,6 +106,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 ```
+
+### window.history.replaceState
+- 브라우저 히스토리 스택의 현재 항목을 대체하는 데 사용합니다. 사용자는 이전 상태로 돌아갈 수 없습니다. 예를 들어, 애플리케이션의 로캘을 전환하려면 다음과 같이 합니다.
+```
+'use client'
+ 
+import { usePathname } from 'next/navigation'
+ 
+export function LocaleSwitcher() {
+  const pathname = usePathname()
+ 
+  function switchLocale(locale: string) {
+    // e.g. '/en/about' or '/fr/contact'
+    const newPath = `/${locale}${pathname}`
+    window.history.replaceState(null, '', newPath)
+  }
+ 
+  return (
+    <>
+      <button onClick={() => switchLocale('en')}>English</button>
+      <button onClick={() => switchLocale('fr')}>French</button>
+    </>
+  )
+}
+```
+
+
 
 - 경로 중 얼마나 많은 부분이 미리 페치되는지는 경로가 정적이냐 동적이냐에 따라 달라집니다.
 
