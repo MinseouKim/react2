@@ -1,4 +1,60 @@
 # 202130103 김민서
+# 10/17 8주차
+## 서버 및 클라이언트 구성 요소
+### 서버와 클라이언트 구성요소를 언제 사용해야 하나요?
+다음과 같은 경우 클라이언트 구성 요소를 사용하세요 .
+- 상태및 이벤트 핸들러. 예를 들어 onClick, onChange.
+- 수명 주기 논리. 예를 들어 useEffect.
+- 브라우저 전용 API. 예 localStorage: , window, Navigator.geolocation, 등
+- 맞춤형 후크.
+
+다음과 같은 경우 서버 구성 요소를 사용하세요 .
+- 소스에 가까운 데이터베이스나 API에서 데이터를 가져옵니다.
+- 클라이언트에게 노출하지 않고 API 키, 토큰 및 기타 비밀을 사용합니다.
+- 브라우저로 전송되는 JavaScript의 양을 줄이세요.
+
+```
+import Link from 'next/link'
+ 
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <nav>
+          {/* Prefetched when the link is hovered or enters the viewport */}
+          <Link href="/blog">Blog</Link>
+          {/* No prefetching */}
+          <a href="/contact">Contact</a>
+        </nav>
+        {children}
+      </body>
+    </html>
+  )
+}
+```
+### Next.js에서 서버와 클라이언트 구성 요소는 어떻게 작동합니까?
+- 서버에서 Next.js는 React API를 사용하여 렌더링을 조정합니다
+
+- HTML은 사용자에게 경로의 빠르고 비대화형 미리보기를 즉시 보여주는 데 사용됩니다.
+- RSC 페이로드는 클라이언트와 서버 구성 요소 트리를 조정하는 데 사용됩니다.
+
+- ex) 클라이언트 구성 요소 사용
+```
+'use client'
+ 
+import { useState } from 'react'
+ 
+export default function Counter() {
+  const [count, setCount] = useState(0)
+ 
+  return (
+    <div>
+      <p>{count} likes</p>
+      <button onClick={() => setCount(count + 1)}>Click me</button>
+    </div>
+  )
+}
+```
 # 10/1 6주차
 ### 클라이언트 측 전환
 - 전통적으로 서버에서 렌더링된 페이지로 이동하면 전체 페이지가 로드됩니다. 이로 인해 상태가 삭제되고, 스크롤 위치가 재설정되며, 상호작용이 차단됩니다.
