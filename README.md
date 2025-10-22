@@ -1,4 +1,81 @@
 # 202130103 김민서
+# 10/22 9주차
+## Interleaving Server and Client Components
+- 서버 컴포넌트를 클라이언트 컴포넌트에 prop으로 전달할 수 있습니다. 이를 통해 클라이언트 컴포넌트 내에 서버에서 렌더링된 UI를 시각적으로 중첩할 수 있습니다.
+- 일반적인 패턴은 . 에 슬롯을children 생성하는 것입니다 . 예를 들어, 클라이언트 상태를 사용하여 가시성을 전환하는 컴포넌트 내부에 서버에서 데이터를 가져오는 컴포넌트가 있습니다 .<ClientComponent><Cart><Modal>
+```
+'use client'
+ 
+export default function Modal({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>
+}
+-------------------------------------------------------
+
+import Modal from './ui/modal'
+import Cart from './ui/cart'
+ 
+export default function Page() {
+  return (
+    <Modal>
+      <Cart />
+    </Modal>
+  )
+}
+```
+## 컨텍스트 제공자
+- React 컨텍스트 현재 테마처럼 전역 상태를 공유하는 데 일반적으로 사용됩니다. 하지만 React 컨텍스트는 서버 컴포넌트에서 지원되지 않습니다.
+
+## 타사 구성 요소
+- 클라이언트 전용 기능에 의존하는 타사 구성 요소를 사용하는 경우, 해당 구성 요소를 클라이언트 구성 요소에 래핑하여 예상대로 작동하는지 확인할 수 있습니다.
+
+- 예를 들어, 패키지 <Carousel />에서 를 가져올 수 있습니다 acme-carousel. 이 구성 요소는 를 사용 useState하지만 아직 지시어가 없습니다 "use client".
+
+- <Carousel />클라이언트 구성 요소 내에서 사용하면 예상대로 작동합니다.
+```
+'use client'
+ 
+import { useState } from 'react'
+import { Carousel } from 'acme-carousel'
+ 
+export default function Gallery() {
+  const [isOpen, setIsOpen] = useState(false)
+ 
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>View pictures</button>
+      {/* Works, since Carousel is used within a Client Component */}
+      {isOpen && <Carousel />}
+    </div>
+  )
+}
+```
+- 도서관 저자를 위한 조언
+
+- 컴포넌트 라이브러리를 빌드하는 경우, "use client"클라이언트 전용 기능에 의존하는 진입점에 지시문을 추가하세요. 이렇게 하면 사용자가 래퍼를 만들지 않고도 서버 컴포넌트로 컴포넌트를 가져올 수 있습니다.
+
+- 일부 번들러는 지시어를 제거할 수 있다는 점에 유의하세요 . React Wrap Balancer 에서 지시어를 "use client"포함하도록 esbuild를 구성하는 방법의 예를 확인할 수 있습니다."use client"및 Vercel Analytics저장소.
+
+## 환경 오염 예방
+```
+export async function getData() {
+  const res = await fetch('https://external-service.com/data', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  })
+ 
+  return res.json()
+}
+```
+- 이 기능에는 API_KEY클라이언트에 노출되어서는 안 되는 내용이 포함되어 있습니다.
+
+- Next.js에서는 접두사가 붙은 환경 변수만 NEXT_PUBLIC_클라이언트 번들에 포함됩니다. 접두사가 붙지 않은 변수는 Next.js에서 빈 문자열로 대체됩니다.
+
+- 결과적으로 getData()클라이언트에서 가져와서 실행할 수는 있지만 예상대로 작동하지 않습니다.
+
+- 클라이언트 구성 요소에서 실수로 사용되는 것을 방지하려면 다음 server-only패키지를 사용할 수 있습니다.
+
+
 # 10/17 8주차
 ## 서버 및 클라이언트 구성 요소
 ### 서버와 클라이언트 구성요소를 언제 사용해야 하나요?
