@@ -29,18 +29,18 @@ fetch호출이나 데이터베이스 쿼리( ) 와 같은 동적 데이터는 db
 
 ## 3. 캐시된 데이터
 모든 서버 구성 요소에 추가하여 use cache캐시하고 사전 렌더링된 셸에 포함합니다. 캐시된 구성 요소 내부에서는 런타임 API를 사용할 수 없습니다. 유틸리티 함수를 로 표시 use cache하고 서버 구성 요소에서 호출할 수도 있습니다.
-```
+````ruby
 export async function getProducts() {
   'use cache'
   const data = await db.query('SELECT * FROM products')
   return data
 }
-```
+````
 ## 서스펜스 경계 사용
 - 리액트 서스펜스경계를 사용하면 동적 또는 런타임 데이터를 래핑할 때 사용할 대체 UI를 정의할 수 있습니다.
 
 - 폴백 UI를 포함한 경계 외부의 콘텐츠는 정적 셸로 미리 렌더링되는 반면, 경계 내부의 콘텐츠는 준비가 되면 스트리밍됩니다.
-```
+````ruby
 import { Suspense } from 'react'
  
 export default function Page() {
@@ -59,7 +59,7 @@ async function DynamicContent() {
   const { posts } = await res.json()
   return <div>{/* ... */}</div>
 }
-```
+````
 # 10/22 9주차
 ## Interleaving Server and Client Components
 - 서버 컴포넌트를 클라이언트 컴포넌트에 prop으로 전달할 수 있습니다. 이를 통해 클라이언트 컴포넌트 내에 서버에서 렌더링된 UI를 시각적으로 중첩할 수 있습니다.
