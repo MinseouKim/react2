@@ -1,7 +1,124 @@
 # 202130103 김민서
+# 10/30 11주차
+## Fetching Data
+### 서버 구성 요소
+다음을 사용하여 서버 구성 요소에서 데이터를 가져올 수 있습니다.
+1. APIfetch​
+2. ORM 또는 데이터베이스
+
+### 중복된 요청 제거 및 데이터 캐시
+- 요청 중복을 제거하는 한 가지 방법은 요청 메모이제이션fetch 입니다 . 이 메커니즘을 사용하면 단일 렌더 패스에서 동일한 URL과 옵션을 가진 또는 를 사용하는 호출이 하나의 요청으로 결합됩니다. 이 작업은 자동으로 수행되며, 에 Abort 신호를 전달하여 요청을 취소 할 수 있습니다 .
+- fetchGETHEADfetch 요청 메모이제이션은 요청의 수명에 따라 범위가 지정됩니다.
+
+- Next.js의 데이터 캐시를fetch 사용하여 요청 중복을 제거할 수도 있습니다 . 예를 들어 옵션 에서 다음과 같이 설정할 수 있습니다 .cache: 'force-cache'fetch
+데이터 캐시를 사용하면 현재 렌더 패스와 들어오는 요청에서 데이터를 공유할 수 있습니다.
+
+fetch를 사용 하지 않고 대신 ORM이나 데이터베이스를 직접 사용하는 경우 React 로 데이터 액세스를 래핑할 수 있습니다.cache기능.
+
+````ruby
+import { cache } from 'react'
+import { db, posts, eq } from '@/lib/db'
+ 
+export const getPost = cache(async (id: string) => {
+  const post = await db.query.posts.findFirst({
+    where: eq(posts.id, parseInt(id)),
+  })
+})
+````
+### Streaming
+- 서버 구성 요소에서 데이터를 가져오면 각 요청마다 서버에서 데이터를 가져와 렌더링합니다. 데이터 요청 속도가 느리면 모든 데이터를 가져올 때까지 전체 경로의 렌더링이 차단됩니다.
+
+#### 스트리밍 구현 방법
+- 파일 로 페이지 래핑 loading.js
+- 구성 요소를 래핑하는 방법<Suspense>
+
+````ruby
+export default function Loading() {
+  // Define the Loading UI here
+  return <div>Loading...</div>
+}
+````
+#### With <Suspense>
+- <Suspense>페이지의 어떤 부분을 스트리밍할지 더욱 세부적으로 설정할 수 있습니다. 예를 들어, 경계를 벗어나는 모든 페이지 콘텐츠를 즉시 표시하고 <Suspense>, 경계 안에 있는 블로그 게시물 목록은 스트리밍할 수 있습니다.
+
+````ruby
+import { Suspense } from 'react'
+import BlogList from '@/components/BlogList'
+import BlogListSkeleton from '@/components/BlogListSkeleton'
+ 
+export default function BlogPage() {
+  return (
+    <div>
+      {/* This content will be sent to the client immediately */}
+      <header>
+        <h1>Welcome to the Blog</h1>
+        <p>Read the latest posts below.</p>
+      </header>
+      <main>
+        {/* Any content wrapped in a <Suspense> boundary will be streamed */}
+        <Suspense fallback={<BlogListSkeleton />}>
+          <BlogList />
+        </Suspense>
+      </main>
+    </div>
+  )
+}
+````
+### Parallel data fetching
+- 병렬 데이터 페치는 경로에서 데이터 요청이 적극적으로 시작되고 동시에 시작될 때 발생합니다.
+- 기본적으로 레이아웃과 페이지는 병렬로 렌더링됩니다. 따라서 각 세그먼트는 가능한 한 빨리 데이터를 가져오기 시작합니다.
+- 하지만 어떤 구성 요소 내에서든 여러 개의 async/ await요청이 다른 요청 뒤에 배치되는 경우 순차적일 수 있습니다. 예를 들어, is가 해결될 getAlbums때까지 차단됩니다 getArtist
+
+````ruby
+import { getArtist, getAlbums } from '@/app/lib/data'
+ 
+export default async function Page({ params }) {
+  // These requests will be sequential
+  const { username } = await params
+  const artist = await getArtist(username)
+  const albums = await getAlbums(username)
+  return <div>{artist.name}</div>
+}
+````
+
+### 데이터 사전 로딩
+- 요청을 차단하는 위에서 적극적으로 호출하는 유틸리티 함수를 만들어 데이터를 미리 로드할 수 있습니다. 함수 <Item>에 따라 조건부로 렌더링합니다 checkIsAvailable().
+
+- 데이터 종속성을 즉시 시작하기 위해 preload()before를 호출할 수 있습니다 . 렌더링될 때쯤이면 데이터가 이미 페치된 상태입니다.checkIsAvailable()<Item/><Item/>
+
+````ruby
+import { getItem, checkIsAvailable } from '@/lib/data'
+ 
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  // starting loading item data
+  preload(id)
+  // perform another asynchronous task
+  const isAvailable = await checkIsAvailable()
+ 
+  return isAvailable ? <Item id={id} /> : null
+}
+ 
+export const preload = (id: string) => {
+  // void evaluates the given expression and returns undefined
+  // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/void
+  void getItem(id)
+}
+export async function Item({ id }: { id: string }) {
+  const result = await getItem(id)
+  // ...
+}
+````
+
 # 10/29 10주차
 ## 캐시 구성 요소
 - 캐시 구성 요소는 Next.js에서 렌더링 및 캐싱을 위한 새로운 접근 방식으로, 캐시되는 내용과 시기를 세부적으로 제어하는 ​​동시에 부분 사전 렌더링(PPR)을 통해 뛰어난 사용자 경험을 보장합니다 .
+
+
 
 ### 캐시 구성 요소
 - 동적 애플리케이션을 개발할 때는 두 가지 주요 접근 방식의 균형을 맞춰야 합니다.
