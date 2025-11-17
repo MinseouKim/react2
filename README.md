@@ -1,4 +1,213 @@
 # 202130103 김민서
+# 11/19 14주차
+
+# 11/12 13주차
+## Caching and Revalidating
+- 캐싱은 데이터 페치 및 기타 계산 결과를 저장하여 향후 동일한 데이터에 대한 요청을 더 빠르게 처리할 수 있도록 하는 기술입니다. 
+
+#### Next.js는 캐싱 및 재검증 처리를 위한 몇 가지 API를 제공합니다. 이 가이드에서는 이러한 API를 언제, 어떻게 사용하는지 안내합니다.
+- fetch
+- cacheTag
+- revalidateTag
+- updateTag
+- revalidatePath
+- unstable_cache
+
+### fetch
+````ruby
+export default async function Page() {
+  const data = await fetch('https://...', { cache: 'force-cache' })
+}
+````
+### cacheTag
+- use cache캐시 구성 요소를 사용하면 지시어를 사용하여 모든 계산을 캐시하고 태그를 지정할 수 있습니다.
+````ruby
+import { cacheTag } from 'next/cache'
+ 
+export async function getProducts() {
+  'use cache'
+  cacheTag('products')
+ 
+  const products = await db.query('SELECT * FROM products')
+  return products
+}
+````
+### revalidateTag
+- revalidateTag태그와 이벤트 발생 후 캐시 항목을 다시 검증하는 데 사용됩니다
+- 사용profile="max" : 오래된 콘텐츠를 제공하는 동안 재검증하는 동안 오래된 콘텐츠 의미론을 사용하여 백그라운드에서 새 콘텐츠를 가져옵니다.
+- 두 번째 인수가 없는 경우 : 캐시를 즉시 만료하는 레거시 동작(더 이상 사용되지 않음)
+````ruby
+import { revalidateTag } from 'next/cache'
+ 
+export async function updateUser(id: string) {
+  // Mutate data
+  revalidateTag('user', 'max') // Recommended: Uses stale-while-revalidate
+}
+````
+### UpdateTag
+- updateTag는 서버 작업에서 직접 읽고 쓰는 시나리오에서 캐시된 데이터를 즉시 만료하도록 특별히 설계되었습니다. 
+````ruby
+import { updateTag } from 'next/cache'
+import { redirect } from 'next/navigation'
+ 
+export async function createPost(formData: FormData) {
+  // Create post in database
+  const post = await db.post.create({
+    data: {
+      title: formData.get('title'),
+      content: formData.get('content'),
+    },
+  })
+ 
+  // Immediately expire cache so the new post is visible
+  updateTag('posts')
+  updateTag(`post-${post.id}`)
+ 
+  redirect(`/posts/${post.id}`)
+}
+````
+### revalidatePath
+- revalidatePath는 경로의 유효성을 재검사하고 이벤트 발생 시 사용하는 함수입니다. 사용하려면 경로 핸들러 또는 서버 작업에서 호출합니다.
+````ruby
+import { revalidatePath } from 'next/cache'
+ 
+export async function updateUser(id: string) {
+  // Mutate data
+  revalidatePath('/profile')
+````
+### unstable_cache
+- unstable_cache데이터베이스 쿼리 및 기타 비동기 함수의 결과를 캐시할 수 있습니다. 
+
+````ruby
+import { db } from '@/lib/db'
+export async function getUserById(id: string) {
+  return db
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
+    .then((res) => res[0])
+}
+````
+
+# 11/05 12주차
+## Updating Data
+### 서버 기능이란 무엇인가요?
+- 서버 함수 는 서버에서 실행되는 비동기 함수입니다. 네트워크 요청을 통해 클라이언트에서 호출될 수 있으므로 비동기적이어야 합니다.
+
+- 또는 변형 컨텍스트 에서는 이를 서버 작업action 이라고도 합니다 .
+### 서버 함수 생성
+- 서버 기능은 다음을 사용하여 정의할 수 있습니다.use server, 지시어 비동기 함수 의 맨 위에 지시어를 배치하여 해당 함수를 서버 함수로 표시하거나, 별도 파일의 맨 위에 지시어를 배치하여 해당 파일의 모든 내보내기를 표시할 수 있습니다.
+````ruby
+export async function createPost(formData: FormData) {
+  'use server'
+  const title = formData.get('title')
+  const content = formData.get('content')
+ 
+  // Update data
+  // Revalidate cache
+}
+ 
+export async function deletePost(formData: FormData) {
+  'use server'
+  const id = formData.get('id')
+ 
+  // Update data
+  // Revalidate cache
+}
+````
+### 클라이언트 구성 요소
+- 클라이언트 구성 요소에서는 서버 함수를 정의할 수 없습니다. 하지만 "use server"맨 위에 다음 지시어가 있는 파일에서 서버 함수를 가져와 클라이언트 구성 요소에서 호출할 수 있습니다.
+````ruby
+'use server'
+ 
+export async function createPost() {}
+-----------------------------------------
+'use client'
+ 
+import { createPost } from '@/app/actions'
+ 
+export function Button() {
+  return <button formAction={createPost}>Create</button>
+}
+````
+### 액션을 소품으로 전달하기
+````ruby
+'use client'
+ 
+export default function ClientComponent({
+  updateItemAction,
+}: {
+  updateItemAction: (formData: FormData) => void
+}) {
+  return <form action={updateItemAction}>{/* ... */}</form>
+}
+````
+### 이벤트 핸들러
+- . 과 같은 이벤트 핸들러를 사용하여 클라이언트 구성 요소에서 서버 함수를 호출할 수 있습니다 (onClick)
+````ruby
+'use client'
+ 
+import { incrementLike } from './actions'
+import { useState } from 'react'
+ 
+export default function LikeButton({ initialLikes }: { initialLikes: number }) {
+  const [likes, setLikes] = useState(initialLikes)
+ 
+  return (
+    <>
+      <p>Total Likes: {likes}</p>
+      <button
+        onClick={async () => {
+          const updatedLikes = await incrementLike()
+          setLikes(updatedLikes)
+        }}
+      >
+        Like
+      </button>
+    </>
+  )
+}
+````
+### 보류 상태 표시
+````ruby
+'use client'
+ 
+import { useActionState, startTransition } from 'react'
+import { createPost } from '@/app/actions'
+import { LoadingSpinner } from '@/app/ui/loading-spinner'
+ 
+export function Button() {
+  const [state, action, pending] = useActionState(createPost, false)
+ 
+  return (
+    <button onClick={() => startTransition(action)}>
+      {pending ? <LoadingSpinner /> : 'Create Post'}
+    </button>
+  )
+}
+````
+### 쿠키
+- API를 사용하여 서버 작업 내에서 쿠키를 사용할 get수 있습니다 (setdeletecookies)
+
+- 서버 작업에서 쿠키를 설정하거나 삭제 하면 Next.js는 서버에서 현재 페이지와 레이아웃을 다시 렌더링하여 UI 가 새로운 쿠키 값을 반영하도록 합니다.
+````ruby
+'use server'
+ 
+import { cookies } from 'next/headers'
+ 
+export async function exampleAction() {
+  const cookieStore = await cookies()
+ 
+  // Get cookie
+  cookieStore.get('name')?.value
+ 
+  // Set cookie
+  cookieStore.set('name', 'Delba')
+ 
+  // Delete cookie
+  cookieStore.delete('name')
+}
+````
 # 10/30 11주차
 ## Fetching Data
 ### 서버 구성 요소
