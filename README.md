@@ -1,6 +1,105 @@
 # 202130103 김민서
 # 11/19 14주차
-
+# CSS
+## 테일윈드 CSS
+#### Tailwind CSS 설치:
+````ruby
+pnpm add -D tailwindcss @tailwindcss/postcss
+````
+- PostCSS 플러인 추가
+````ruby
+export default {
+  plugins: {
+    '@tailwindcss/postcss': {},
+  },
+}
+````
+- 글로벌 CSS 파일에 Tailwind를 가져옵니다.
+````ruby
+@import 'tailwindcss';
+````
+- 루트 레이아웃에 CSS 파일을 가져옵니다.
+````ruby
+import './globals.css'
+ 
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+````
+- Tailwind Utlity Class 사용가능
+````ruby
+export default function Page() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+      <h1 className="text-4xl font-bold">Welcome to Next.js!</h1>
+    </main>
+  )
+}
+````
+### CSS 모듈
+- CSS 모듈은 고유한 클래스 이름을 생성하여 CSS의 로컬 범위를 지정합니다. 이를 통해 이름 충돌 걱정 없이 여러 파일에서 동일한 클래스를 사용할 수 있습니다.
+````ruby
+.blog {
+  padding: 24px;
+}
+````
+````ruby
+import styles from './blog.module.css'
+ 
+export default function Page() {
+  return <main className={styles.blog}></main>
+}
+````
+### 글로벌 CSS
+- 글로벌 CSS를 사용하면 애플리케이션 전체에 스타일을 적용할 수 있습니다.
+````ruby
+body {
+  padding: 20px 20px 60px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+````
+````ruby
+// These styles apply to every route in the application
+import './global.css'
+ 
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+````
+### 외부 스타일시트
+- 외부 패키지에서 게시된 스타일시트는 공동 배치된 구성 요소를 포함하여 디렉토리의 어느 곳으로나 가져올 수 있습니다.
+````ruby
+import 'bootstrap/dist/css/bootstrap.css'
+ 
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className="container">{children}</body>
+    </html>
+  )
+}
+````
 # 11/12 13주차
 ## Caching and Revalidating
 - 캐싱은 데이터 페치 및 기타 계산 결과를 저장하여 향후 동일한 데이터에 대한 요청을 더 빠르게 처리할 수 있도록 하는 기술입니다. 
