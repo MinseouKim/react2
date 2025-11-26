@@ -1,4 +1,152 @@
 # 202130103 김민서
+# 11/27 15주차
+### 이미지 최적화
+- 크기 최적화: WebP와 같은 최신 이미지 형식을 사용하여 각 장치에 맞는 올바른 크기의 이미지를 자동으로 제공합니다.
+- 시각적 안정성: 레이아웃 이동 방지이미지가 로딩될 때 자동으로.
+- 더 빠른 페이지 로드: 기본 브라우저의 지연 로딩을 사용하여 뷰포트에 이미지가 들어올 때만 이미지를 로드하고, 선택적으로 블러업 플레이스홀더를 사용합니다.
+- 자산 유연성: 원격 서버에 저장된 이미지도 포함하여 필요에 따라 이미지 크기를 조정할 수 있습니다.
+
+### 글꼴 최적화
+- 모든 글꼴 파일에 대한 자체 호스팅 기능이 내장되어 있어 레이아웃 변경 없이 웹 글꼴을 최적으로 로드할 수 있습니다.
+- 사용을 시작하려면 또는 next/font에서 가져와 적절한 옵션을 사용하여 함수로 호출한 후 글꼴을 적용할 요소의 를 설정합니다
+#### Google Font
+```ruby
+import { Roboto } from 'next/font/google'
+ 
+const roboto = Roboto({
+  weight: '400',
+  subsets: ['latin'],
+})
+ 
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={roboto.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+#### local Font
+```ruby
+import localFont from 'next/font/local'
+ 
+const myFont = localFont({
+  src: './my-font.woff2',
+})
+ 
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={myFont.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+### 메타데이터 및 OG 이미지
+메타데이터 API는 향상된 SEO와 웹 공유성을 위해 애플리케이션 메타데이터를 정의하는 데 사용할 수 있으며, 여기에는 다음이 포함됩니다.
+
+- 정적 metadata객체
+- 동적 generateMetadata함수
+- 정적 또는 동적으로 생성된 파비콘 과 OG 이미지를 추가하는 데 사용할 수 있는 특수 파일 규칙입니다 .
+#### 정적 메타데이터
+```ruby
+import type { Metadata } from 'next'
+ 
+export const metadata: Metadata = {
+  title: 'My Blog',
+  description: '...',
+}
+ 
+export default function Layout() {}
+```
+#### 스트리밍 메타데이터
+- generateMetadata동적으로 렌더링된 페이지의 경우 Next.js는 메타데이터를 별도로 스트리밍하여 UI 렌더링을 차단하지 않고 해결되면 HTML에 삽입합니다 .
+- 스트리밍 메타데이터는 시각적 콘텐츠를 먼저 스트리밍함으로써 인지된 성능을 향상시킵니다.
+
+#### 생성된 Open Graph 이미지
+- 생성자 ImageResponse를 사용하면 JSX와 CSS를 사용하여 동적 이미지를 생성할 수 있습니다. 이는 데이터에 의존하는 OG 이미지에 유용합니다.
+````ruby
+import { ImageResponse } from 'next/og'
+import { getPost } from '@/app/lib/data'
+ 
+// Image metadata
+export const size = {
+  width: 1200,
+  height: 630,
+}
+ 
+export const contentType = 'image/png'
+ 
+// Image generation
+export default async function Image({ params }: { params: { slug: string } }) {
+  const post = await getPost(params.slug)
+ 
+  return new ImageResponse(
+    (
+      // ImageResponse JSX element
+      <div
+        style={{
+          fontSize: 128,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {post.title}
+      </div>
+    )
+  )
+}
+````
+### 경로 핸들러
+- 경로 핸들러를 사용하면 웹 요청을 사용하여 지정된 경로에 대한 사용자 정의 요청 핸들러를 만들 수 있습니다
+#### 지원되는 HTTP 메서드
+- 다음 HTTP 메서드지원됨: GET, POST, PUT, PATCH, DELETE, HEAD, 및 OPTIONS. 지원되지 않는 메서드가 호출되면 Next.js는 405 Method Not Allowed응답을 반환합니다.
+#### 캐싱
+- 캐싱
+- 경로 핸들러는 기본적으로 캐시되지 않습니다. 하지만 메서드에 대한 캐시를 선택할 수 있습니다 GET. 다른 지원되는 HTTP 메서드는 캐시되지 않습니다 . 메서드를 캐시하려면 경로 핸들러 파일과 같은 경로 구성 옵션을GET 사용하세요 .
+````ruby
+export const dynamic = 'force-static'
+ 
+export async function GET() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+  })
+  const data = await res.json()
+ 
+  return Response.json({ data })
+}
+````
+### 프록시
+- 프록시를 사용하면 요청이 완료되기 전에 코드를 실행할 수 있습니다. 그런 다음 수신되는 요청에 따라 요청 또는 응답 헤더를 다시 작성, 리디렉션, 수정하거나 직접 응답하여 응답을 수정할 수 있습니다.
+### Node.js 서버 
+-  Next.js는 Node.js를 지원하는 모든 제공자에 배포할 수 있습니다. package.json다음 "build"및 "start"스크립트가 있는지 확인하세요.
+```ruby
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+#### 도커
+- Next.js는 Docker를 지원하는 모든 공급자에게 배포될 수 있습니다.컨테이너. 여기에는 Kubernetes와 같은 컨테이너 오케스트레이터나 Docker를 실행하는 클라우드 제공업체가 포함됩니다.
+- Docker 배포는 모든 Next.js 기능을 지원합니다
 # 11/19 14주차
 # CSS
 ## 테일윈드 CSS
